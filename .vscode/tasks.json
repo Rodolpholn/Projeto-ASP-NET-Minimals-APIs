@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/Projeto-ASP.NET-Minimals-APIs.csproj",
+                "${workspaceFolder}/Projeto-ASP-NET-Minimals-APIs.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/Projeto-ASP.NET-Minimals-APIs.csproj",
+                "${workspaceFolder}/Projeto-ASP-NET-Minimals-APIs.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/Projeto-ASP.NET-Minimals-APIs.csproj"
+                "${workspaceFolder}/Projeto-ASP-NET-Minimals-APIs.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

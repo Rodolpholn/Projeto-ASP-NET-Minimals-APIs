@@ -1,7 +1,13 @@
-namespace Projeto_ASP.NET_Minimals_APIs.DtOs;
-// namespace MinimalApi.DtOs;
-public class LoginDTO
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Projeto_ASP_NET_Minimals_APIs.Dominio.DTOs
 {
-    public string Email { get; set; } = default!;
-    public string Senha { get; set; } = default!;
+    public class LoginDTO
+    {
+         public string Email { get; set; } = default!;
+        public string Senha { get; set; } = default!;
+    }
 }
