@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -71,10 +73,41 @@ app.MapGet("/", (HttpRequest request) =>
 #endregion
 
 #region ADMINISTRADORES
+string GerarTokenJwt(Administrador administrador)
+{
+    // if(!string.IsNullOrEmpty(key)) return string.Empty;
+      var SymmetricSecurityKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key));
+    var Credentials = new SigningCredentials(SymmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+
+
+    var claims = new List<Claim>()
+    {
+        new Claim(JwtRegisteredClaimNames.Sub, administrador.Email),
+        new Claim("perfil", administrador.Perfil)
+    };
+    var token = new JwtSecurityToken(
+        claims: claims,
+        expires: DateTime.Now.AddHours(2),
+        signingCredentials: Credentials
+    );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+
 app.MapPost("/administradores/login", ([FromBody] LoginDTO loginDTO, iAdministradorServico administradorServico) =>
 {
-    if (administradorServico.Login(loginDTO) != null)
-        return Results.Ok("Login com sucesso");
+    var adm = administradorServico.Login(loginDTO);
+    if (adm != null)
+    {
+        string token = GerarTokenJwt(adm);
+        return Results.Ok(new AdmLogadoModelView
+        {
+            Email = adm.Email,
+            Perfil = adm.Perfil,
+            Token = token
+        });
+    }
     else
         return Results.Unauthorized();
 }).WithTags("Administradores");
