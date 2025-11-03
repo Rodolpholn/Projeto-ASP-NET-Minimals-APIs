@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.DTOs;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Entidades;
+using Projeto_ASP_NET_Minimals_APIs.Dominio.Enuns;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Interfaces;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.ModelViews;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Servicos;
@@ -46,12 +47,81 @@ app.MapGet("/", (HttpRequest request) =>
 #endregion
 
 #region ADMINISTRADORES
-app.MapPost("/administradores/login", ([FromBody]LoginDTO loginDTO, iAdministradorServico administradorServico) =>
+app.MapPost("/administradores/login", ([FromBody] LoginDTO loginDTO, iAdministradorServico administradorServico) =>
 {
     if (administradorServico.Login(loginDTO) != null)
         return Results.Ok("Login com sucesso");
     else
         return Results.Unauthorized();
+}).WithTags("Administradores");
+// Buscar Administradores
+app.MapGet("/administradores", ([FromQuery] int? pagina, iAdministradorServico administradorServico) =>
+{
+    var adms = new List<AdministradorModelView>();
+    var administradores = administradorServico.Todos(pagina);
+    foreach (var adm in administradores)
+    {
+        var perfilEnum = (Perfil)Enum.Parse(typeof(Perfil), adm.Perfil);
+        adms.Add(new AdministradorModelView
+        {
+            Id = adm.Id,
+            Email = adm.Email,
+            Perfil = perfilEnum.ToString()
+        });
+    }
+    return Results.Ok(adms);
+}).WithTags("Administradores");
+
+// Buscar Veiculo por Id
+app.MapGet("/administradores{id}", ([FromRoute] int id, iAdministradorServico administradorServico) =>
+{
+    var administrador = administradorServico.BuscaPorId(id);
+
+    if(administrador == null) return Results.NotFound();
+    return Results.Ok(new AdministradorModelView
+        {
+            Id = administrador.Id,
+            Email = administrador.Email,
+            Perfil = administrador.Perfil
+        });
+}).WithTags("Administradores");
+
+// Criar Administrador
+app.MapPost("/administradores", ([FromBody] AdministradorDTO administradorDTO, iAdministradorServico administradorServico) =>
+{
+    // Validar o DTO
+    var validacao = new ErrosDeValidacao
+    {
+        Mensagens = new List<string>()
+    };
+
+    if (string.IsNullOrEmpty(administradorDTO.Email))
+        validacao.Mensagens.Add("O email do administrador é obrigatório.");
+    if (string.IsNullOrEmpty(administradorDTO.Senha))
+        validacao.Mensagens.Add("A senha do administrador é obrigatória.");
+    if (administradorDTO.Perfil == null)
+        validacao.Mensagens.Add("O perfil do administrador é obrigatório.");
+
+    if (validacao.Mensagens.Count > 0)
+        return Results.BadRequest(validacao);
+    // Adicionar o Administrador
+    var administrador = new Administrador
+    {
+        
+        Email = administradorDTO.Email,
+        Senha = administradorDTO.Senha,
+        Perfil = administradorDTO.Perfil.ToString() ?? Perfil.Editor.ToString()
+        
+    };
+
+    administradorServico.Adicionar(administrador);
+    return Results.Created($"/administrador/{administrador.Id}", new AdministradorModelView
+        {
+            Id = administrador.Id,
+            Email = administrador.Email,
+            Perfil = administrador.Perfil.ToString()
+        });
+    
 }).WithTags("Administradores");
 #endregion
 
@@ -90,13 +160,13 @@ app.MapPost("/veiculos", ([FromBody] VeiculoDTO VeiculoDTO, iVeiculosServico vei
     };
     veiculoServico.Adicionar(veiculo);
     return Results.Created($"/veiculos/{veiculo.Id}", veiculo);
-}).WithTags("Enviar Veiculos");
+}).WithTags("Veiculos");
 // Buscar Veiculos
 app.MapGet("/veiculos", ([FromQuery] int? pagina, iVeiculosServico veiculoServico) =>
 {
     var veiculos = veiculoServico.Todos(pagina);
     return Results.Ok(veiculos);
-}).WithTags("buscar Veiculos");
+}).WithTags("Veiculos");
 // Buscar Veiculo por Id
 app.MapGet("/veiculos{id}", ([FromRoute] int id, iVeiculosServico veiculoServico) =>
 {
@@ -104,7 +174,7 @@ app.MapGet("/veiculos{id}", ([FromRoute] int id, iVeiculosServico veiculoServico
 
     if(veiculo == null) return Results.NotFound();
     return Results.Ok(veiculo);
-}).WithTags("Buscar Veiculo por Id");
+}).WithTags("Veiculos");
 // Atualizar Veiculo
 app.MapPut("/veiculos{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, iVeiculosServico veiculoServico) =>
 {
@@ -123,7 +193,7 @@ app.MapPut("/veiculos{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, iVeiculo
     veiculoServico.Atualizar(veiculo);
     return Results.Ok(veiculo);
 
-}).WithTags("Atualizar Veiculo");
+}).WithTags("Veiculos");
 // Deletar Veiculo
 app.MapDelete("/veiculos{id}", ([FromRoute] int id,  iVeiculosServico veiculoServico) =>
 {
@@ -132,7 +202,7 @@ app.MapDelete("/veiculos{id}", ([FromRoute] int id,  iVeiculosServico veiculoSer
 
     veiculoServico.remover(veiculo);
 return Results.Ok(veiculo);
-}).WithTags("Deletar Veiculo");
+}).WithTags("Veiculos");
 #endregion
 
 #region APP
