@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.DTOs;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Entidades;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Enuns;
@@ -9,23 +11,45 @@ using Projeto_ASP_NET_Minimals_APIs.Dominio.Servicos;
 using Projeto_ASP_NET_Minimals_APIs.Infraestrutura.Db;
 
 #region BUILDER AND SERVICES
+// Criação do builder
 var builder = WebApplication.CreateBuilder(args);
+// Configuração do JWT
+var key = builder.Configuration.GetSection("Jwt").ToString();
+// Caso a chave não esteja no appsettings.json, usar uma chave padrão
+if(string.IsNullOrEmpty(key)) key = "1234567890123456"; // chave padrão caso não esteja no appsettings
+// Configuração do serviço de autenticação
+builder.Services.AddAuthentication(option =>
+{
+    option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key))
+    };
+});
 
+builder.Services.AddAuthorization();
+
+// Adicionando os serviços ao container de injeção de dependência
 builder.Services.AddScoped<iAdministradorServico, AdministradorServico>();
 builder.Services.AddScoped<iVeiculosServico, VeiculoServico>();
-
+// Adicionando os serviços do Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
+// Configuração do DbContext com MySQL
 builder.Services.AddDbContext<DbContexto>(options =>
 {
     options.UseMySql(
-        builder.Configuration.GetConnectionString("mysql"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("mysql"))
+        builder.Configuration.GetConnectionString("MySql"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))
     );
 });
-
+// Construção do app
 var app = builder.Build();
 #endregion
 
@@ -70,7 +94,7 @@ app.MapGet("/administradores", ([FromQuery] int? pagina, iAdministradorServico a
         });
     }
     return Results.Ok(adms);
-}).WithTags("Administradores");
+}).RequireAuthorization().WithTags("Administradores");
 
 // Buscar Veiculo por Id
 app.MapGet("/administradores{id}", ([FromRoute] int id, iAdministradorServico administradorServico) =>
@@ -84,7 +108,7 @@ app.MapGet("/administradores{id}", ([FromRoute] int id, iAdministradorServico ad
             Email = administrador.Email,
             Perfil = administrador.Perfil
         });
-}).WithTags("Administradores");
+}).RequireAuthorization().WithTags("Administradores");
 
 // Criar Administrador
 app.MapPost("/administradores", ([FromBody] AdministradorDTO administradorDTO, iAdministradorServico administradorServico) =>
@@ -122,7 +146,7 @@ app.MapPost("/administradores", ([FromBody] AdministradorDTO administradorDTO, i
             Perfil = administrador.Perfil.ToString()
         });
     
-}).WithTags("Administradores");
+}).RequireAuthorization().WithTags("Administradores");
 #endregion
 
 #region VEICULOS
@@ -160,13 +184,13 @@ app.MapPost("/veiculos", ([FromBody] VeiculoDTO VeiculoDTO, iVeiculosServico vei
     };
     veiculoServico.Adicionar(veiculo);
     return Results.Created($"/veiculos/{veiculo.Id}", veiculo);
-}).WithTags("Veiculos");
+}).RequireAuthorization().WithTags("Veiculos");
 // Buscar Veiculos
 app.MapGet("/veiculos", ([FromQuery] int? pagina, iVeiculosServico veiculoServico) =>
 {
     var veiculos = veiculoServico.Todos(pagina);
     return Results.Ok(veiculos);
-}).WithTags("Veiculos");
+}).RequireAuthorization().WithTags("Veiculos");
 // Buscar Veiculo por Id
 app.MapGet("/veiculos{id}", ([FromRoute] int id, iVeiculosServico veiculoServico) =>
 {
@@ -174,7 +198,7 @@ app.MapGet("/veiculos{id}", ([FromRoute] int id, iVeiculosServico veiculoServico
 
     if(veiculo == null) return Results.NotFound();
     return Results.Ok(veiculo);
-}).WithTags("Veiculos");
+}).RequireAuthorization().WithTags("Veiculos");
 // Atualizar Veiculo
 app.MapPut("/veiculos{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, iVeiculosServico veiculoServico) =>
 {
@@ -193,7 +217,7 @@ app.MapPut("/veiculos{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, iVeiculo
     veiculoServico.Atualizar(veiculo);
     return Results.Ok(veiculo);
 
-}).WithTags("Veiculos");
+}).RequireAuthorization().WithTags("Veiculos");
 // Deletar Veiculo
 app.MapDelete("/veiculos{id}", ([FromRoute] int id,  iVeiculosServico veiculoServico) =>
 {
@@ -202,12 +226,16 @@ app.MapDelete("/veiculos{id}", ([FromRoute] int id,  iVeiculosServico veiculoSer
 
     veiculoServico.remover(veiculo);
 return Results.Ok(veiculo);
-}).WithTags("Veiculos");
+}).RequireAuthorization().WithTags("Veiculos");
 #endregion
 
 #region APP
+// Configurando o Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
+// Ativando o uso de autenticação e autorização
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Run();
 #endregion

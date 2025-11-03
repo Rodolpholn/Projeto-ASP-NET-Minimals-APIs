@@ -41,7 +41,7 @@ namespace Projeto_ASP_NET_Minimals_APIs.Infraestrutura.Db
             if(!optionsBuilder.IsConfigured)
             {
                  
-                var stringDeConexao = _configuracaoAppSettings.GetConnectionString("mysql")?.ToString();
+                var stringDeConexao = _configuracaoAppSettings.GetConnectionString("MySql")?.ToString();
                 if(!string.IsNullOrEmpty(stringDeConexao))
                 {
                     optionsBuilder.UseMySql(
