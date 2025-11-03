@@ -28,11 +28,14 @@ builder.Services.AddAuthentication(option =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateAudience = true,
+        ValidateAudience = false,
         ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key))
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key)),
+        ValidateIssuer = false,
     };
 });
+
+
 
 builder.Services.AddAuthorization();
 
@@ -41,7 +44,33 @@ builder.Services.AddScoped<iAdministradorServico, AdministradorServico>();
 builder.Services.AddScoped<iVeiculosServico, VeiculoServico>();
 // Adicionando os serviços do Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(option =>
+{
+option.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+{
+    Name = "Authorization",
+    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+    Scheme = "Bearer",
+    BearerFormat = "JWT",
+    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+    Description = "Insira o toke JWT Aqui"
+});
+option.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+{
+    {
+        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+            {
+                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string[] {}
+    }
+});
+});
+
 
 // Configuração do DbContext com MySQL
 builder.Services.AddDbContext<DbContexto>(options =>
@@ -69,7 +98,7 @@ app.MapGet("/", (HttpRequest request) =>
     );
 
     return Results.Json(homeView);
-}).WithName("Home");
+}).AllowAnonymous().WithName("Home");
 #endregion
 
 #region ADMINISTRADORES
@@ -110,7 +139,7 @@ app.MapPost("/administradores/login", ([FromBody] LoginDTO loginDTO, iAdministra
     }
     else
         return Results.Unauthorized();
-}).WithTags("Administradores");
+}).AllowAnonymous().WithTags("Administradores");
 // Buscar Administradores
 app.MapGet("/administradores", ([FromQuery] int? pagina, iAdministradorServico administradorServico) =>
 {
