@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Entidades;
 using Projeto_ASP_NET_Minimals_APIs.Dominio.Interfaces;
 using Projeto_ASP_NET_Minimals_APIs.Infraestrutura.Db;
+using Projeto_ASP_NET_Minimals_APIs.Dominio.DTOs;
 
 namespace Projeto_ASP_NET_Minimals_APIs.Dominio.Servicos
 {

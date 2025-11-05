@@ -71,7 +71,7 @@ namespace Test.Domain.Servicos
             var admDoBanco = administradorServico.BuscaPorId(adm.Id);
 
             // Assert
-            Assert.AreEqual(1, admDoBanco.Id);
+            Assert.AreEqual(1, admDoBanco?.Id);
 
 
         }
